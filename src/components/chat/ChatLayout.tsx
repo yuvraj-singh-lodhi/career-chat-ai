@@ -1,51 +1,47 @@
-"use client"
-
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { SessionSidebar } from "./SessionSidebar"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft } from "lucide-react"
+"use client";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { SessionSidebar } from "./SessionSidebar";
 
 interface ChatLayoutProps {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }
 
 export function ChatLayout({ children, className }: ChatLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
-    <div className={cn("flex h-screen w-full overflow-hidden bg-background", className)}>
-      {/* Collapsible Sidebar */}
+    <div
+      className={cn(
+        "flex w-full overflow-hidden bg-background flex-1",
+        className
+      )}
+    >
+      {/* Sidebar */}
       <aside
         className={cn(
-          "relative h-full border-r bg-muted/30 transition-all duration-300 ease-in-out",
-          isSidebarOpen ? "w-64" : "w-16",
+          "relative flex flex-col transition-all duration-300 ease-in-out",
+          isSidebarOpen ? "w-64 border-r border-r-muted/30" : "w-16",
           "hidden md:flex"
         )}
       >
-        <div className={cn("flex w-full flex-col", !isSidebarOpen && "hidden")}>
-          <SessionSidebar />
-        </div>
-        
-        {/* Toggle Button */}
-        <Button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "absolute -right-4 top-1/2 -translate-y-1/2",
-            isSidebarOpen ? "" : "rotate-180"
-          )}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+        <SessionSidebar
+          isCollapsed={!isSidebarOpen}
+          onToggle={handleToggleSidebar}
+        />
       </aside>
-
+      
       {/* Main Chat Area */}
-      <main className="relative flex flex-1 flex-col">
-        {children}
+      <main className="flex flex-1 justify-center overflow-hidden">
+        <div className="flex flex-1 max-w-[600px] flex-col bg-background">
+          {children}
+        </div>
       </main>
     </div>
-  )
+  );
 }

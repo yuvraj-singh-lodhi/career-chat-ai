@@ -1,8 +1,9 @@
+// components/chat/MessageBubble.tsx
 "use client"
 
 import * as React from "react"
+import ReactMarkdown from "react-markdown"
 import { cn } from "@/lib/utils"
-import { AIResponseFormatter } from "@/lib/aiResponseFormatter"
 
 interface MessageBubbleProps {
   role: "user" | "assistant"
@@ -11,31 +12,42 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ role, content }: MessageBubbleProps) {
   const isUser = role === "user"
-  const parts = role === "assistant" ? AIResponseFormatter.format(content) : [content]
+
+  const bubbleStyle: React.CSSProperties = isUser
+    ? {
+        backgroundColor: "#FFDAB9", // soft peach
+        color: "#1F1F1F", // dark text
+      }
+    : {
+        backgroundColor: "#E8E8E8", // soft neutral
+        color: "#1F1F1F",
+      }
 
   return (
-    <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex w-full mb-2", isUser ? "justify-end" : "justify-start")}>
       <div
-        className={cn(
-          "max-w-[75%] rounded-lg px-4 py-2 text-sm shadow-sm whitespace-pre-line",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
-        )}
+        style={bubbleStyle}
+        className="max-w-[75%] rounded-xl px-4 py-2 text-sm shadow-sm"
       >
-        {parts.map((part, idx) =>
-          typeof part === "string" ? (
-            <p key={idx} className="mb-2 last:mb-0 leading-relaxed">
-              {part}
-            </p>
-          ) : (
-            <ul key={idx} className="list-disc pl-5 space-y-1">
-              {part.items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          )
-        )}
+        <ReactMarkdown
+          components={{
+            p: ({ node, ...props }) => (
+              <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
+            ),
+            ul: ({ node, ...props }) => (
+              <ul {...props} className="list-disc pl-5 space-y-1" />
+            ),
+            li: ({ node, ...props }) => <li {...props} />,
+            code: ({ node, ...props }) => (
+              <code
+                {...props}
+                className="bg-gray-200 dark:bg-gray-700 rounded p-1 text-xs"
+              />
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
       </div>
     </div>
   )

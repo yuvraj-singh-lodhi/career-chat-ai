@@ -2,8 +2,7 @@ import * as React from "react"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "next-themes"
 import { cn } from "@/lib/utils"
-import { Navbar } from "@/components/layout/Navbar"
-import { Providers } from "./providers" // ✅ import our Providers
+import { Providers } from "./providers"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -24,9 +23,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {/* ✅ Wrap the app in Providers so tRPC & React Query work */}
           <Providers>
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
+            <div className="flex flex-col h-screen">
+              <main className="flex-1 flex overflow-hidden">
+                {children}
+              </main>
             </div>
           </Providers>
         </ThemeProvider>

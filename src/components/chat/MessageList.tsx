@@ -16,12 +16,6 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages }: MessageListProps) {
-  const bottomRef = React.useRef<HTMLDivElement>(null)
-
-  // Auto scroll to bottom when new messages arrive
-  React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
 
   return (
     <ScrollArea className="flex-1 p-4">
@@ -33,7 +27,7 @@ export function MessageList({ messages }: MessageListProps) {
             content={msg.content}
           />
         ))}
-        <div ref={bottomRef} />
+        <div  />
       </div>
     </ScrollArea>
   )
