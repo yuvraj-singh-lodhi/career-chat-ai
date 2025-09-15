@@ -28,8 +28,8 @@ export const userRouter = router({
         },
       });
 
-      // 2️⃣ Create default session for user
-      const session = await ctx.db.sessions.create({
+      // 2️⃣ Create default session for user (ONLY on signup)
+      await ctx.db.sessions.create({
         data: {
           title: "New Chat",
           user_id: user.id,
@@ -40,7 +40,6 @@ export const userRouter = router({
         id: user.id,
         email: user.email,
         name: user.name,
-        sessionId: session.id,
       };
     }),
 
@@ -55,21 +54,12 @@ export const userRouter = router({
       const valid = await verifyPassword(input.password, user.password);
       if (!valid) throw new Error("Invalid credentials");
 
-      // 🔑 find existing session or create one
-      let session = await ctx.db.sessions.findFirst({
-        where: { user_id: user.id },
-      });
-
-      if (!session) {
-        session = await ctx.db.sessions.create({
-          data: {
-            title: "New Chat",
-            user_id: user.id,
-          },
-        });
-      }
-
-      return { id: user.id, email: user.email, name: user.name, sessionId: session.id };
+      // ✅ Do NOT create new sessions here, only return user
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      };
     }),
 
   me: publicProcedure

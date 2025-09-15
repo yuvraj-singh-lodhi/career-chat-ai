@@ -7,8 +7,9 @@ import { verifyPassword } from "@/server/lib/auth";
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: 30 * 60, 
   },
-  providers: [
+  providers: [    
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -47,9 +48,11 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token?.id) {
-        session.user.id = token.id as string;
-        session.user.name = token.name as string | null;
-        session.user.email = token.email as string;
+        session.user = {
+          id: token.id as string,
+          name: token.name as string,
+          email: token.email as string,
+        };
       }
       return session;
     },

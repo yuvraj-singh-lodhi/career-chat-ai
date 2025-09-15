@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, X } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { Mail, Lock, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,52 +14,73 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
 
 export default function AuthPage() {
   const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const signupMutation = trpc.user.signup.useMutation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (isSignUp) {
-      console.log("Signup:", { email, password });
-    } else {
-      console.log("Signin:", { email, password });
+    try {
+      if (isSignUp) {
+        // Create user
+        await signupMutation.mutateAsync({ name, email, password });
+      }
+
+      // Sign in (both cases)
+      const loginResult = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+      if (!loginResult?.ok) throw new Error(loginResult?.error || "Login failed");
+
+      // Redirect
+      router.push("/chat");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/chat");
   };
 
   return (
-    // Backdrop
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-      <Card className="relative w-full max-w-md shadow-xl">
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="absolute right-3 top-3 rounded-md p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
+    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
             {isSignUp ? "Create Account" : "Welcome Back"}
           </CardTitle>
           <CardDescription className="text-center">
-            {isSignUp
-              ? "Sign up to get started with Oration AI"
-              : "Sign in to continue your journey"}
+            {isSignUp ? "Sign up to get started" : "Sign in to continue"}
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            {/* Email */}
+            {isSignUp && (
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  className="pl-9"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -71,7 +93,6 @@ export default function AuthPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -86,7 +107,7 @@ export default function AuthPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={loading}>
               {isSignUp ? "Sign Up" : "Sign In"}
             </Button>
 

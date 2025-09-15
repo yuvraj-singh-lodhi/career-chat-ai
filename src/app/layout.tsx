@@ -1,3 +1,5 @@
+"use client"; // make sure client-only logic is separated
+
 import * as React from "react"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "next-themes"
@@ -6,11 +8,6 @@ import { Providers } from "./providers"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
-
-export const metadata = {
-  title: "Oration AI Career Chat",
-  description: "AI-powered career counseling chat built with Next.js + tRPC",
-}
 
 export default function RootLayout({
   children,

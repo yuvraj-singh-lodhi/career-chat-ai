@@ -1,114 +1,124 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { trpc } from "@/lib/trpc"
-import { ChatLayout } from "@/components/chat/ChatLayout"
-import { MessageList } from "@/components/chat/MessageList"
-import { ChatComposer } from "@/components/chat/ChatComposer"
-import { motion, AnimatePresence } from "framer-motion"
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { ChatLayout } from "@/components/chat/ChatLayout";
+import { useSession } from "next-auth/react";
+import { trpc } from "@/lib/trpc";
+import { ChatSession } from "@/components/chat/ChatSession";
+import { Button } from "@/components/ui/button";
 
-interface ChatMessage {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  createdAt: Date
-}
+export default function ChatLandingPage() {
+  const router = useRouter();
+  const { data: authSession, status } = useSession();
 
-export default function ChatPage() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>([])
-  const messageIdRef = React.useRef(1)
-  const sendMessageMutation = trpc.message.create.useMutation()
+  const createSessionMutation = trpc.session.create.useMutation();
+  const { data: existingSessions, isLoading: sessionsLoading, refetch } =
+    trpc.session.listByUser.useQuery(
+      { userId: authSession?.user?.id || "" },
+      { enabled: !!authSession?.user?.id }
+    );
 
-  const handleSend = async (content: string) => {
-    const userMessage: ChatMessage = {
-      id: messageIdRef.current.toString(),
-      role: "user",
-      content,
-      createdAt: new Date(),
+  const [sessionId, setSessionId] = React.useState<string | null>(null);
+  const [sessionInitialized, setSessionInitialized] = React.useState(false);
+
+  React.useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
     }
-    messageIdRef.current += 1
-    setMessages((prev) => [...prev, userMessage])
+  }, [status, router]);
 
-    const formattedMessages = [...messages, userMessage].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
-
-    try {
-      const response = await sendMessageMutation.mutateAsync({
-        messages: formattedMessages,
-      })
-
-      const aiMessage: ChatMessage = {
-        id: messageIdRef.current.toString(),
-        role: "assistant",
-        content: response.message,
-        createdAt: new Date(),
+  React.useEffect(() => {
+    const initSession = async () => {
+      if (!authSession?.user?.id || sessionInitialized || sessionsLoading) {
+        return;
       }
-      messageIdRef.current += 1
-      setMessages((prev) => [...prev, aiMessage])
-    } catch (error) {
-      console.error("Failed to get AI response:", error)
-      const errorMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "Oops! Something went wrong. Please try again.",
-        createdAt: new Date(),
+
+      setSessionInitialized(true);
+
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+      if (existingSessions && existingSessions.length > 0) {
+        const mostRecentSession = existingSessions[0];
+        const lastActivity = mostRecentSession.updated_at
+          ? new Date(mostRecentSession.updated_at)
+          : new Date(0);
+          
+        if (lastActivity < tenMinutesAgo) {
+          // If the most recent session is older than 10 minutes, create a new one.
+          try {
+            const newSession = await createSessionMutation.mutateAsync({
+              title: "New Chat",
+              userId: authSession.user.id,
+            });
+            setSessionId(newSession.id);
+            refetch();
+          } catch (err) {
+            console.error("Failed to create new session:", err);
+          }
+        } else {
+          // Otherwise, reuse the most recent session.
+          setSessionId(mostRecentSession.id);
+        }
+      } else {
+        // If no sessions exist, create the first one.
+        try {
+          const newSession = await createSessionMutation.mutateAsync({
+            title: "New Chat",
+            userId: authSession.user.id,
+          });
+          setSessionId(newSession.id);
+          refetch();
+        } catch (err) {
+          console.error("Failed to create initial session:", err);
+        }
       }
-      setMessages((prev) => [...prev, errorMessage])
-    }
+    };
+
+    initSession();
+  }, [
+    authSession?.user?.id,
+    existingSessions,
+    sessionsLoading,
+    createSessionMutation,
+    refetch,
+    sessionInitialized,
+  ]);
+
+  if (status === "loading" || sessionsLoading) {
+    return (
+      <ChatLayout>
+        <div className="flex flex-1 items-center justify-center">
+          <p>Checking authentication...</p>
+        </div>
+      </ChatLayout>
+    );
   }
 
-  const hasConversationStarted = messages.length > 0
+  if (status === "unauthenticated") return null;
 
-  return (
-    <ChatLayout>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <AnimatePresence mode="wait">
-          {!hasConversationStarted ? (
-            // INITIAL CENTERED VIEW
-            <motion.div
-              key="centered"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-1 flex-col items-center justify-center space-y-6 px-4"
-            >
-              {/* Centered title */}
-              <h1 className="text-xl font-semibold text-center">
-                Hello! I&apos;m your AI career counselor. How can I help today?
-              </h1>
+  if (!sessionId) {
+    return (
+      <ChatLayout>
+        <div className="flex flex-1 flex-col items-center justify-center space-y-4">
+          <p>No active sessions found.</p>
+          <Button
+            onClick={async () => {
+              if (!authSession?.user?.id) return;
+              const newSession = await createSessionMutation.mutateAsync({
+                title: "New Chat",
+                userId: authSession.user.id,
+              });
+              setSessionId(newSession.id);
+              refetch();
+            }}
+          >
+            Start a New Session
+          </Button>
+        </div>
+      </ChatLayout>
+    );
+  }
 
-              {/* Centered input */}
-              <ChatComposer
-                onSend={handleSend}
-                disabled={sendMessageMutation.isPending}
-              />
-            </motion.div>
-          ) : (
-            // NORMAL CHAT LAYOUT
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-1 flex-col overflow-hidden"
-            >
-              <div className="flex-1 overflow-auto">
-                <MessageList messages={messages} />
-              </div>
-              <div>
-                <ChatComposer
-                  onSend={handleSend}
-                  disabled={sendMessageMutation.isPending}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </ChatLayout>
-  )
+  return <ChatSession sessionId={sessionId} />;
 }
