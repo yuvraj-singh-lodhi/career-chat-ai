@@ -1,11 +1,10 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
-
-export interface AIProvider {
-  chat(messages: { role: "system" | "user" | "assistant"; content: string }[]): Promise<string>;
-}
+import { ChatMessage, AIProvider } from "./types";
+import { getSystemInstruction } from "./utils";
 
 export class GeminiProvider implements AIProvider {
   private model: GenerativeModel;
+  private genAI: GoogleGenerativeAI;
 
   constructor(apiKey: string) {
     if (!apiKey) {
@@ -15,38 +14,42 @@ export class GeminiProvider implements AIProvider {
       console.log("✅ GEMINI_API_KEY successfully loaded.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    this.model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   }
 
-  async chat(messages: { role: "system" | "user" | "assistant"; content: string }[]): Promise<string> {
-    // Always prepend a system instruction
-    const systemInstruction = {
-      role: "system" as const,
-      content: `You are an AI career counselor. 
-- Provide meaningful, supportive, and actionable career guidance. 
-- Maintain a natural conversation flow, remembering past context. 
-- Be empathetic, clear, and practical in your advice. 
-- Ask clarifying questions if needed before giving guidance.`,
-    };
+  async chat(messages: ChatMessage[]): Promise<string> {
+    // Always prepend system instruction
+    const finalMessages = [getSystemInstruction(), ...messages];
 
-    // Combine the system instruction with the conversation history
-    const finalMessages = [systemInstruction, ...messages];
+    const contents = finalMessages.map((m) => {
+      // 🔥 Map roles to Gemini-compatible ones
+      let role: "user" | "model" = "user";
+      if (m.role === "assistant") {
+        role = "model";
+      } else if (m.role === "user" || m.role === "system") {
+        role = "user";
+      }
 
-    // Convert to plain text for Gemini
-    const prompt = finalMessages
-      .map((m) => `${m.role === "user" ? "User" : m.role === "assistant" ? "Assistant" : "System"}: ${m.content}`)
-      .join("\n");
+      const parts: any[] = [];
 
-    const result = await this.model.generateContent(prompt);
+      if (m.content) {
+        parts.push({ text: m.content });
+      }
 
+      if (m.audio) {
+        parts.push({
+          inlineData: {
+            mimeType: m.audio.mimeType,
+            data: m.audio.base64,
+          },
+        });
+      }
+
+      return { role, parts };
+    });
+
+    const result = await this.model.generateContent({ contents });
     return result.response.text() ?? "";
   }
-}
-
-// Singleton instance
-const provider = new GeminiProvider(process.env.GEMINI_API_KEY!);
-
-export async function getAIResponse(messages: { role: "system" | "user" | "assistant"; content: string }[]) {
-  return provider.chat(messages);
 }

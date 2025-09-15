@@ -38,7 +38,7 @@ export function ChatLayout({ children, className }: ChatLayoutProps) {
       
       {/* Main Chat Area */}
       <main className="flex flex-1 justify-center overflow-hidden">
-        <div className="flex flex-1 max-w-[600px] flex-col bg-background">
+        <div className="flex flex-1 max-w-full flex-col bg-background">
           {children}
         </div>
       </main>

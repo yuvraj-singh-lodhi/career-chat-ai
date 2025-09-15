@@ -10,6 +10,24 @@ interface MessageBubbleProps {
   content: string
 }
 
+function TypingBubble() {
+  return (
+    <div className="flex space-x-1 items-center">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+          // inline style used to stagger animation start time (more reliable than Tailwind bracket utility)
+          style={{
+            animationDelay: `${i * 0.15}s`,
+            animationIterationCount: "infinite",
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export function MessageBubble({ role, content }: MessageBubbleProps) {
   const isUser = role === "user"
 
@@ -29,25 +47,29 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         style={bubbleStyle}
         className="max-w-[75%] rounded-xl px-4 py-2 text-sm shadow-sm"
       >
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
-            ),
-            ul: ({ node, ...props }) => (
-              <ul {...props} className="list-disc pl-5 space-y-1" />
-            ),
-            li: ({ node, ...props }) => <li {...props} />,
-            code: ({ node, ...props }) => (
-              <code
-                {...props}
-                className="bg-gray-200 dark:bg-gray-700 rounded p-1 text-xs"
-              />
-            ),
-          }}
-        >
-          {content}
-        </ReactMarkdown>
+        {content === "•••" ? (
+          <TypingBubble />
+        ) : (
+          <ReactMarkdown
+            components={{
+              p: ({ node, ...props }) => (
+                <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
+              ),
+              ul: ({ node, ...props }) => (
+                <ul {...props} className="list-disc pl-5 space-y-1" />
+              ),
+              li: ({ node, ...props }) => <li {...props} />,
+              code: ({ node, ...props }) => (
+                <code
+                  {...props}
+                  className="bg-gray-200 dark:bg-gray-700 rounded p-1 text-xs"
+                />
+              ),
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        )}
       </div>
     </div>
   )
