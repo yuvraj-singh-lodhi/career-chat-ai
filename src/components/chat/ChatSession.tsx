@@ -16,7 +16,7 @@ interface ChatMessage {
   createdAt: Date;
 }
 
-export function ChatSession({ sessionId }: { sessionId: string }) {
+export function ChatSession({ sessionId }: { sessionId: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMessageContent = searchParams.get("initialMessage");
@@ -25,14 +25,15 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const messageIdRef = React.useRef(1);
 
-  const trpcContext = trpc.useContext();
-  const updateSessionMutation = trpc.session.update.useMutation();
   const sendMessageMutation = trpc.message.create.useMutation();
+  const createSessionMutation = trpc.session.create.useMutation();
 
   const { data: existingMessages } = trpc.message.list.useQuery(
-    { sessionId },
+    { sessionId: sessionId! },
     { enabled: !!sessionId }
   );
+
+  const [activeSessionId, setActiveSessionId] = React.useState<string | null>(sessionId);
 
   // Fetch existing messages
   React.useEffect(() => {
@@ -55,10 +56,28 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
     if (initialMessageContent && messages.length === 0) {
       handleSend({ content: initialMessageContent });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessageContent, messages.length]);
 
   const handleSend = async (message: { content?: string }) => {
     if (!authSession?.user?.id) return;
+
+    let currentSessionId = activeSessionId;
+
+    // 🚀 Create session if none exists yet
+    if (!currentSessionId) {
+      try {
+        const newSession = await createSessionMutation.mutateAsync({
+          title: "New Chat", // keep static title, no update later
+          userId: authSession.user.id,
+        });
+        setActiveSessionId(newSession.id);
+        currentSessionId = newSession.id;
+      } catch (err) {
+        console.error("Failed to create session:", err);
+        return;
+      }
+    }
 
     const userMessageId = (messageIdRef.current++).toString();
     const typingId = (messageIdRef.current++).toString();
@@ -80,26 +99,12 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
     setMessages((prev) => [...prev, userMessage, typingMessage]);
 
     try {
-      // ✅ Check if it's the first message based on the messages array length
-      const isFirstMessage = messages.length === 0;
-
       const response = await sendMessageMutation.mutateAsync({
         content: message.content ?? "[Audio message]",
         role: "user",
-        sessionId,
+        sessionId: currentSessionId,
         userId: authSession.user.id,
       });
-
-      // ✅ Update session title on the first message
-      if (isFirstMessage && message.content) {
-        await updateSessionMutation.mutateAsync({
-          id: sessionId,
-          title: generateSessionTitle(message.content),
-        });
-        
-        // ✅ Invalidate the query to force a refetch in the sidebar
-        await trpcContext.session.listByUser.invalidate();
-      }
 
       setMessages((curr) =>
         curr.map((m) =>
@@ -122,12 +127,6 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
         )
       );
     }
-  };
-
-  const generateSessionTitle = (content: string) => {
-    const maxLength = 50;
-    const title = content.trim();
-    return title.length > maxLength ? title.substring(0, maxLength) + "..." : title;
   };
 
   if (status === "loading") {
@@ -162,7 +161,7 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
               </h1>
               <ChatComposer
                 onSend={handleSend}
-                disabled={sendMessageMutation.isPending || updateSessionMutation.isPending}
+                disabled={sendMessageMutation.isPending}
               />
             </motion.div>
           ) : (
@@ -180,7 +179,7 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
               <div>
                 <ChatComposer
                   onSend={handleSend}
-                  disabled={sendMessageMutation.isPending || updateSessionMutation.isPending}
+                  disabled={sendMessageMutation.isPending}
                 />
               </div>
             </motion.div>

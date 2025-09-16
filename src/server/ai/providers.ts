@@ -8,7 +8,9 @@ export class GeminiProvider implements AIProvider {
 
   constructor(apiKey: string) {
     if (!apiKey) {
-      console.error("❌ GEMINI_API_KEY is not set. Please add it to your .env.local file.");
+      console.error(
+        "❌ GEMINI_API_KEY is not set. Please add it to your .env.local file."
+      );
       throw new Error("Missing GEMINI_API_KEY");
     } else {
       console.log("✅ GEMINI_API_KEY successfully loaded.");
@@ -31,7 +33,11 @@ export class GeminiProvider implements AIProvider {
         role = "user";
       }
 
-      const parts: any[] = [];
+      // More precise type instead of `any`
+      const parts: Array<
+        | { text: string }
+        | { inlineData: { mimeType: string; data: string } }
+      > = [];
 
       if (m.content) {
         parts.push({ text: m.content });

@@ -1,13 +1,13 @@
 // components/chat/MessageBubble.tsx
-"use client"
+"use client";
 
-import * as React from "react"
-import ReactMarkdown from "react-markdown"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
-  role: "user" | "assistant"
-  content: string
+  role: "user" | "assistant";
+  content: string;
 }
 
 function TypingBubble() {
@@ -17,7 +17,6 @@ function TypingBubble() {
         <span
           key={i}
           className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-          // inline style used to stagger animation start time (more reliable than Tailwind bracket utility)
           style={{
             animationDelay: `${i * 0.15}s`,
             animationIterationCount: "infinite",
@@ -25,24 +24,26 @@ function TypingBubble() {
         />
       ))}
     </div>
-  )
+  );
 }
 
 export function MessageBubble({ role, content }: MessageBubbleProps) {
-  const isUser = role === "user"
+  const isUser = role === "user";
 
   const bubbleStyle: React.CSSProperties = isUser
     ? {
-        backgroundColor: "#FFDAB9", // soft peach
+        backgroundColor: "#FFDAB9", // soft peach for user
         color: "#1F1F1F", // dark text
       }
     : {
-        backgroundColor: "#E8E8E8", // soft neutral
+        backgroundColor: "#E8E8E8", // soft neutral for assistant
         color: "#1F1F1F",
-      }
+      };
 
   return (
-    <div className={cn("flex w-full mb-2", isUser ? "justify-end" : "justify-start")}>
+    <div
+      className={cn("flex w-full mb-2", isUser ? "justify-end" : "justify-start")}
+    >
       <div
         style={bubbleStyle}
         className="max-w-[75%] rounded-xl px-4 py-2 text-sm shadow-sm"
@@ -52,14 +53,14 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         ) : (
           <ReactMarkdown
             components={{
-              p: ({ node, ...props }) => (
+              p: (props) => (
                 <p {...props} className="mb-2 last:mb-0 leading-relaxed" />
               ),
-              ul: ({ node, ...props }) => (
+              ul: (props) => (
                 <ul {...props} className="list-disc pl-5 space-y-1" />
               ),
-              li: ({ node, ...props }) => <li {...props} />,
-              code: ({ node, ...props }) => (
+              li: (props) => <li {...props} />,
+              code: (props) => (
                 <code
                   {...props}
                   className="bg-gray-200 dark:bg-gray-700 rounded p-1 text-xs"
@@ -72,5 +73,5 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         )}
       </div>
     </div>
-  )
+  );
 }
