@@ -6,26 +6,9 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import React, { Suspense } from "react";
 import { AuthButton } from "@/components/ui/auth-button";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  // Redirect logged-in users straight to chat
-  React.useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/chat"); 
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="flex flex-1 items-center justify-center min-h-screen">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  const { data: session } = useSession(); 
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 bg-background text-foreground text-center">
@@ -38,6 +21,7 @@ export default function HomePage() {
           Get personalized advice, practice for interviews, and explore new
           opportunities with a friendly AI career counselor.
         </p>
+
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
           <Link href={session ? "/chat" : "/auth"}>
             <Button
@@ -48,6 +32,7 @@ export default function HomePage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
+
           <Suspense fallback={<p>Loading...</p>}>
             <AuthButton />
           </Suspense>

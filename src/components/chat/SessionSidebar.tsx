@@ -35,12 +35,9 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
 
   // Redirect to auth page if no user is logged in
   React.useEffect(() => {
-    if (!userId) {
-      router.push("/auth");
-    }
+    if (!userId) router.push("/auth");
   }, [userId, router]);
 
-  // Fetch sessions for the current user
   const {
     data: sessions,
     isLoading,
@@ -51,12 +48,11 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
     { enabled: !!userId }
   );
 
-  // Mutation to create a new session
   const createSessionMutation = trpc.session.create.useMutation();
   const deleteSessionMutation = trpc.session.delete.useMutation();
 
   const getInitials = (name: string = "") => {
-    if (!name || name.trim().length === 0) return "?";
+    if (!name.trim()) return "?";
     const names = name.trim().split(/\s+/);
     if (names.length === 1) return names[0].slice(0, 2).toUpperCase();
     return (names[0][0] + names[names.length - 1][0]).toUpperCase();
@@ -66,7 +62,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
     try {
       const newSession = await createSessionMutation.mutateAsync({
         title: "New Chat",
-        userId: userId || "", // Ensure userId is passed
+        userId: userId || "",
       });
       refetch();
       router.push(`/chat/${newSession.id}`);
@@ -90,7 +86,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
     { icon: Search, label: "Search Chats", href: "/chat/search" },
   ];
 
-  if (!userId) return null; // Only render the sidebar if the user is logged in
+  if (!userId) return null;
 
   return (
     <div className="flex h-full w-full flex-col bg-muted/30 border-r">
@@ -137,6 +133,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
           </Tooltip>
         </TooltipProvider>
       </div>
+
       <div className="flex flex-col gap-1 py-2">
         {/* User Avatar & Name */}
         {user &&
@@ -181,6 +178,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
               </AnimatePresence>
             </div>
           ))}
+
         {/* Sidebar Items */}
         {sidebarItems.map((item, index) =>
           item.href ? (
@@ -215,37 +213,40 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
             <TooltipProvider key={index}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    onClick={item.onClick}
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="w-8 h-8 mx-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+                    onClick={item.onClick}
                   >
                     <item.icon className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">{item.label}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <button
+            <div
               key={index}
               onClick={item.onClick}
-              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </button>
+            </div>
           )
         )}
+
         {/* Logout */}
         {userId &&
           (!isCollapsed ? (
-            <button
+            <div
               onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 font-semibold"
+              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 font-semibold cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
-            </button>
+            </div>
           ) : (
             <div className="mx-2">
               <TooltipProvider>
@@ -265,17 +266,15 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
               </TooltipProvider>
             </div>
           ))}
+
         {/* Theme Toggle */}
         {!isCollapsed ? (
-          <button
-            onClick={() => {
-              const themeToggle = document.querySelector(
-                "#theme-toggle-button"
-              ) as HTMLButtonElement | null;
-              if (themeToggle) {
-                themeToggle.click();
-              }
-            }}
+          <div
+            onClick={() =>
+              document
+                .querySelector<HTMLButtonElement>("#theme-toggle-button")
+                ?.click()
+            }
             className="flex w-full items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
           >
             <ThemeToggle
@@ -291,7 +290,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
             >
               Theme
             </motion.span>
-          </button>
+          </div>
         ) : (
           <div className="mx-2">
             <TooltipProvider>
@@ -305,6 +304,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
           </div>
         )}
       </div>
+
       {/* Sessions List */}
       <AnimatePresence>
         {!isCollapsed && (
@@ -333,7 +333,6 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                 {sessions?.map((session) => (
                   <li key={session.id}>
                     <div className="flex items-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors px-2 py-1 group">
-                      {/* Link container - takes available space minus button width */}
                       <div className="flex-1 min-w-0 pr-2">
                         <Link
                           href={`/chat/${session.id}`}
@@ -345,7 +344,6 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                           </span>
                         </Link>
                       </div>
-                      {/* Delete button - fixed width, always present but hidden */}
                       <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <TooltipProvider>

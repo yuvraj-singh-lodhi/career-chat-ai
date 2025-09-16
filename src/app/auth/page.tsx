@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Mail, Lock, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,41 +18,61 @@ import { trpc } from "@/lib/trpc";
 
 export default function AuthPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const signupMutation = trpc.user.signup.useMutation();
+
+  // ✅ Redirect if user is already logged in
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/chat");
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
 
     try {
       if (isSignUp) {
-        // Sign up first
         await signupMutation.mutateAsync({ name, email, password });
       }
 
-      // Sign in using NextAuth
       const result = await signIn("credentials", {
-        redirect: false, // Important: prevent automatic redirect
+        redirect: false,
         email,
         password,
       });
 
-      if (!result?.ok) throw new Error(result?.error || "Login failed");
+      if (!result?.ok) throw new Error(result?.error || "Invalid email or password");
 
-      // ✅ Navigate to /chat manually
-      router.replace("/chat"); // use replace to avoid back-button loops
+      router.replace("/chat");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Something went wrong");
+      setErrorMessage(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (status === "loading") {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
+
+  // If already authenticated, do not show login form
+  if (status === "authenticated") return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
@@ -105,11 +125,15 @@ export default function AuthPage() {
                 required
               />
             </div>
+
+            {errorMessage && (
+              <p className="text-red-500 text-sm text-center">{errorMessage}</p>
+            )}
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {isSignUp ? "Sign Up" : "Sign In"}
+              {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
 
             <p className="text-sm text-center text-muted-foreground">
