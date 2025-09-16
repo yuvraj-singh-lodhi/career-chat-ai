@@ -3,19 +3,10 @@
 import * as React from "react";
 import { ChatLayout } from "@/components/chat/ChatLayout";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { ChatSession } from "@/components/chat/ChatSession";
 
 export default function ChatLandingPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/auth"); // redirect to login if not logged in
-    }
-  }, [status, router]);
+  const { status } = useSession();
 
   if (status === "loading") {
     return (
@@ -27,8 +18,5 @@ export default function ChatLandingPage() {
     );
   }
 
-  if (status === "unauthenticated") return null; // already redirecting
-
-  // ✅ User is authenticated, render chat session
   return <ChatSession sessionId={null} />;
 }
