@@ -1,3 +1,4 @@
+// Corrected components/chat/ChatSession.tsx
 "use client";
 
 import * as React from "react";
@@ -35,10 +36,7 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
 
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(sessionId);
 
-  // Fetch existing messages
-  React.useEffect(() => {
-    if (status === "unauthenticated") router.push("/auth");
-
+  React.useEffect(() => {    
     if (existingMessages) {
       setMessages(
         existingMessages.map((msg) => ({
@@ -51,7 +49,6 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
     }
   }, [status, existingMessages, router]);
 
-  // Send initial message if passed via URL
   React.useEffect(() => {
     if (initialMessageContent && messages.length === 0) {
       handleSend({ content: initialMessageContent });
@@ -64,11 +61,10 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
 
     let currentSessionId = activeSessionId;
 
-    // 🚀 Create session if none exists yet
     if (!currentSessionId) {
       try {
         const newSession = await createSessionMutation.mutateAsync({
-          title: "New Chat", // keep static title, no update later
+          title: "New Chat", 
           userId: authSession.user.id,
         });
         setActiveSessionId(newSession.id);

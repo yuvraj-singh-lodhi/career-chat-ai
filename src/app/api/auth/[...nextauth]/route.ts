@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/auth", // Keep this but ensure no conflicts
+    signIn: "/auth",
   },
   callbacks: {
     async jwt({ token, user }) {
