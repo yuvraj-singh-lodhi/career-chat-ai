@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -14,6 +16,7 @@ export default function HomePage() {
   React.useEffect(() => {
     if (status === "authenticated") router.push("/chat");
   }, [status, router]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 bg-background text-foreground text-center">
       <div className="flex flex-col items-center max-w-2xl px-4 py-8 space-y-6">
