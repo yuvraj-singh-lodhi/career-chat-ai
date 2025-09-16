@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+  },
+  webpack: (config) => {
+    config.externals = config.externals || [];
+    config.externals.push('@prisma/client');
+    return config;
+  },
 };
 
 export default nextConfig;
