@@ -14,8 +14,18 @@ export default function HomePage() {
 
   // Redirect logged-in users straight to chat
   React.useEffect(() => {
-    if (status === "authenticated") router.push("/chat");
+    if (status === "authenticated") {
+      router.replace("/chat"); 
+    }
   }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 bg-background text-foreground text-center">
@@ -29,7 +39,7 @@ export default function HomePage() {
           opportunities with a friendly AI career counselor.
         </p>
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          <Link href="/chat">
+          <Link href={session ? "/chat" : "/auth"}>
             <Button
               size="lg"
               className="h-12 text-md font-semibold px-8 shadow-lg transition-transform transform hover:scale-105"
