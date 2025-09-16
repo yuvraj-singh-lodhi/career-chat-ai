@@ -32,20 +32,22 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        // Create user
+        // Create user first
         await signupMutation.mutateAsync({ name, email, password });
       }
 
-      // Sign in (both cases)
-      const loginResult = await signIn("credentials", {
+      // Sign in using NextAuth
+      const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
+        callbackUrl: "/chat", // redirect after successful login
       });
-      if (!loginResult?.ok) throw new Error(loginResult?.error || "Login failed");
 
-      // Redirect
-      router.push("/chat");
+      if (!result?.ok) throw new Error(result?.error || "Login failed");
+
+      // Navigate to chat page
+      router.push(result.url || "/chat");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Something went wrong");
     } finally {

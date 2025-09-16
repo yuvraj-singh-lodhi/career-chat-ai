@@ -5,11 +5,12 @@ import { db } from "@/server/db"; // Prisma client
 import { verifyPassword } from "@/server/lib/auth";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET, // 🔑 add this
   session: {
     strategy: "jwt",
-    maxAge: 30 * 60, 
+    maxAge: 30 * 60, // 30 minutes
   },
-  providers: [    
+  providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -19,14 +20,12 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Find user in DB
         const user = await db.users.findUnique({
           where: { email: credentials.email },
         });
 
         if (!user || !user.password) return null;
 
-        // Verify password
         const isValid = await verifyPassword(credentials.password, user.password);
         if (!isValid) return null;
 
@@ -35,7 +34,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/auth",
+    signIn: "/auth", // login page
   },
   callbacks: {
     async jwt({ token, user }) {
