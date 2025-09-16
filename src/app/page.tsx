@@ -1,10 +1,19 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { AuthButton } from "@/components/ui/auth-button";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect logged-in users straight to chat
+  React.useEffect(() => {
+    if (status === "authenticated") router.push("/chat");
+  }, [status, router]);
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 bg-background text-foreground text-center">
       <div className="flex flex-col items-center max-w-2xl px-4 py-8 space-y-6">
@@ -18,7 +27,10 @@ export default function HomePage() {
         </p>
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
           <Link href="/chat">
-            <Button size="lg" className="h-12 text-md font-semibold px-8 shadow-lg transition-transform transform hover:scale-105">
+            <Button
+              size="lg"
+              className="h-12 text-md font-semibold px-8 shadow-lg transition-transform transform hover:scale-105"
+            >
               Get Started
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -31,30 +43,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-// components/auth-button.tsx
-/*
-"use client";
-import { useSession } from "next-auth/react";
-import { Button } from "./ui/button";
-import Link from "next/link";
-import { LogIn } from "lucide-react";
-
-export function AuthButton() {
-  const { status } = useSession();
-  if (status === "loading") {
-    return null;
-  }
-  if (status === "unauthenticated") {
-    return (
-      <Link href="/auth">
-        <Button variant="outline" size="lg" className="h-12 text-md font-semibold px-8">
-          <LogIn className="mr-2 h-4 w-4" />
-          Login
-        </Button>
-      </Link>
-    );
-  }
-  return null;
-}
-*/

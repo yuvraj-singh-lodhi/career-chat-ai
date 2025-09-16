@@ -8,13 +8,14 @@ import { ChatSession } from "@/components/chat/ChatSession";
 
 export default function ChatLandingPage() {
   const router = useRouter();
-  const { data: authSession, status } = useSession();
+const { data: authSession, status } = useSession();
 
   React.useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
     }
   }, [status, router]);
+  
 
   if (status === "loading") {
     return (
@@ -26,8 +27,6 @@ export default function ChatLandingPage() {
     );
   }
 
-  if (status === "unauthenticated") return null;
+if (status === "unauthenticated") return null;
 
-  // 🚀 Do not create session here
-  return <ChatSession sessionId={null} />;
-}
+return <ChatSession sessionId={null} />;}
