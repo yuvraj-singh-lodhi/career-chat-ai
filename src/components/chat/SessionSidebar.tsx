@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/app/providers";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface SessionSidebarProps {
   isCollapsed: boolean;
@@ -32,11 +33,16 @@ interface SessionSidebarProps {
 export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
   const { userId, user, logout } = useAuth();
   const router = useRouter();
+  const { status } = useSession();
 
-  // Redirect to auth page if no user is logged in
+  // Replace this in your existing SessionSidebar:
   React.useEffect(() => {
-    if (!userId) router.push("/auth");
-  }, [userId, router]);
+    if (!userId && status === "unauthenticated") {
+      router.push(
+        "/auth?callbackUrl=" + encodeURIComponent(window.location.pathname)
+      );
+    }
+  }, [userId, status, router]);
 
   const {
     data: sessions,

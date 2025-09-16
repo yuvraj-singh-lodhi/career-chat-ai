@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { Mail, Lock, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { trpc } from "@/lib/trpc";
 
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -29,12 +30,17 @@ export default function AuthPage() {
 
   const signupMutation = trpc.user.signup.useMutation();
 
-  // ✅ Redirect if user is already logged in
+  // Handle redirect logic more carefully
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/chat");
+    if (status === "loading") return; 
+    
+    if (status === "authenticated" && session?.user) {
+      const callbackUrl = searchParams.get('callbackUrl') || '/chat';
+      setTimeout(() => {
+        router.replace(callbackUrl);
+      }, 100);
     }
-  }, [status, router]);
+  }, [status, session, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,15 +52,21 @@ export default function AuthPage() {
         await signupMutation.mutateAsync({ name, email, password });
       }
 
+      const callbackUrl = searchParams.get('callbackUrl') || '/chat';
+      
       const result = await signIn("credentials", {
-        redirect: false,
+        redirect: false, // Handle redirect manually
         email,
         password,
+        callbackUrl,
       });
 
-      if (!result?.ok) throw new Error(result?.error || "Invalid email or password");
+      if (!result?.ok) {
+        throw new Error(result?.error || "Invalid email or password");
+      }
 
-      router.replace("/chat");
+      // Manual redirect on success
+      router.replace(callbackUrl);
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -66,16 +78,29 @@ export default function AuthPage() {
   if (status === "loading") {
     return (
       <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-        <p>Checking authentication...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p>Checking authentication...</p>
+        </div>
       </div>
     );
   }
 
-  // If already authenticated, do not show login form
-  if (status === "authenticated") return null;
+  // If already authenticated, show loading during redirect
+  if (status === "authenticated") {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p>Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Show auth form for unauthenticated users
   return (
-    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
@@ -98,6 +123,7 @@ export default function AuthPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
             )}
@@ -111,6 +137,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -123,6 +150,7 @@ export default function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -133,15 +161,26 @@ export default function AuthPage() {
 
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Please wait...
+                </div>
+              ) : (
+                isSignUp ? "Sign Up" : "Sign In"
+              )}
             </Button>
 
             <p className="text-sm text-center text-muted-foreground">
-              {isSignUp ? "Already have an account?" : "Don’t have an account?"}{" "}
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
               <button
                 type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setErrorMessage("");
+                }}
                 className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                disabled={loading}
               >
                 {isSignUp ? "Sign In" : "Sign Up"}
               </button>

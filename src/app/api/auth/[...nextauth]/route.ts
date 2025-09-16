@@ -1,3 +1,4 @@
+// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/server/db";
@@ -9,7 +10,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 60, // 30 minutes
+    maxAge: 24 * 60 * 60, // Increase to 24 hours
   },
   providers: [
     CredentialsProvider({
@@ -21,23 +22,27 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await db.users.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await db.users.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user || !user.password) return null;
+          if (!user || !user.password) return null;
 
-        const isValid = await verifyPassword(credentials.password, user.password);
-        if (!isValid) return null;
+          const isValid = await verifyPassword(credentials.password, user.password);
+          if (!isValid) return null;
 
-        console.log("User authorized:", user.email);
-        return { id: user.id, name: user.name, email: user.email };
+          console.log("User authorized:", user.email);
+          return { id: user.id, name: user.name, email: user.email };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
       },
     }),
   ],
   pages: {
-    signIn: "/auth",
-    error: "/auth",
+    signIn: "/auth", // Keep this but ensure no conflicts
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -58,7 +63,14 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Prevent redirect loops
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);

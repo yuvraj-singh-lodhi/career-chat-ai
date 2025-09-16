@@ -8,7 +8,7 @@ import { AuthButton } from "@/components/ui/auth-button";
 import { useSession } from "next-auth/react";
 
 export default function HomePage() {
-  const { data: session } = useSession(); 
+  const { data: session } = useSession();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 bg-background text-foreground text-center">
@@ -23,7 +23,8 @@ export default function HomePage() {
         </p>
 
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          <Link href={session ? "/chat" : "/auth"}>
+          <Link href={session ? "/chat" : "/auth?callbackUrl=/chat"}>
+            {" "}
             <Button
               size="lg"
               className="h-12 text-md font-semibold px-8 shadow-lg transition-transform transform hover:scale-105"
