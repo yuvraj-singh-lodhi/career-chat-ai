@@ -38,7 +38,7 @@ export function SearchDialog({ isOpen, onClose, userId }: SearchDialogProps) {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="text-zinc-100 w-full max-w-lg p-6 rounded-lg shadow-lg border border-zinc-800"
+            className="bg-zinc-900 text-zinc-100 w-full max-w-lg p-6 rounded-lg shadow-lg border border-zinc-800"
           >
             {/* Search Bar */}
             <input
