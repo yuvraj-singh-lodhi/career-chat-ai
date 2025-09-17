@@ -115,7 +115,78 @@ export const sessionRouter = router({
       return sessions.map((session) => ({
         ...session,
         lastMessage: session.messages[0] || null,
-        messages: undefined, // Remove full messages array to avoid confusion
+        messages: undefined,
       }));
+    }),
+
+  // Search sessions and messages for a given query
+  search: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        userId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { query, userId } = input;
+      if (!query.trim()) {
+        return [];
+      }
+
+      const searchResults = await ctx.db.sessions.findMany({
+        where: {
+          user_id: userId,
+          OR: [
+            {
+              title: {
+                contains: query,
+                mode: "insensitive", 
+              },
+            },
+            {
+              messages: {
+                some: {
+                  content: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          ],
+        },
+        include: {
+          messages: {
+            where: {
+              content: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            select: {
+              content: true,
+              created_at: true,
+            },
+            orderBy: {
+              created_at: "desc",
+            },
+            take: 1, 
+          },
+        },
+        orderBy: {
+          updated_at: "desc",
+        },
+      });
+
+      return searchResults.map((session) => {
+        const matchingMessage = session.messages[0];
+        const snippet = matchingMessage?.content.substring(0, 100) + "...";
+        return {
+          id: session.id,
+          title: session.title,
+          updated_at: session.updated_at,
+          snippet: matchingMessage ? snippet : null,
+        };
+      });
     }),
 });

@@ -23,12 +23,10 @@ export function MessageList({ messages }: MessageListProps) {
   const bottomRef = React.useRef<HTMLDivElement | null>(null);
   const [showScrollButton, setShowScrollButton] = React.useState(false);
 
-  // Auto-scroll to bottom on new messages
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
-  // Detect if user scrolled away from bottom
   React.useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -48,13 +46,13 @@ export function MessageList({ messages }: MessageListProps) {
   };
 
   return (
-    <div className="relative flex-1 w-full px-4">
+    <div className="relative flex-1 w-full px-4 sm:px-6">
       <ScrollArea
         className="h-full w-full pr-4"
         type="scroll"
-        viewportRef={viewportRef} // ensure ScrollArea supports this
+        viewportRef={viewportRef}
       >
-        <div className="mx-auto w-full max-w-[600px] space-y-3 pt-6">
+        <div className="mx-auto w-full max-w-2xl space-y-3 py-6">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
           ))}
@@ -68,9 +66,7 @@ export function MessageList({ messages }: MessageListProps) {
           size="icon"
           variant="secondary"
           onClick={scrollToBottom}
-          className={cn(
-            "absolute right-6 bottom-20 rounded-full shadow-lg"
-          )}
+          className={cn("absolute right-6 bottom-20 rounded-full shadow-lg")}
         >
           <ArrowDown className="h-5 w-5" />
         </Button>

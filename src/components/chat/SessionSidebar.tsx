@@ -15,15 +15,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/app/providers";
 import { SessionList } from "./SessionList";
+import { SearchDialog } from "./SearchDialog";
+import { ForwardRefExoticComponent, RefAttributes } from "react";
+import { LucideProps } from "lucide-react";
 
 interface SessionSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
 }
 
+type SidebarItem = {
+  icon: ForwardRefExoticComponent<
+    Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
+  >;
+  label: string;
+  href?: string;
+  onClick: () => void;
+};
+
 export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
   const { userId, user, logout } = useAuth();
   const router = useRouter();
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
   const createSessionMutation = trpc.session.create.useMutation();
 
@@ -46,21 +59,25 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
     }
   };
 
-  const sidebarItems = [
+  const sidebarItems: SidebarItem[] = [
     { icon: Plus, label: "New Chat", onClick: handleNewChat },
-    { icon: Search, label: "Search Chats", href: "/chat/search" },
+    {
+      icon: Search,
+      label: "Search Chats",
+      onClick: () => setIsSearchOpen(true),
+    },
   ];
 
   if (!userId) return null;
 
   return (
-    <div className="flex h-full w-full flex-col bg-zinc-900/40 border-r border-zinc-800">
+    <div className="flex h-full w-full flex-col border-r border-border bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <AnimatePresence>
           {!isCollapsed && (
             <motion.h2
-              className="text-sm font-semibold flex items-center gap-2 min-w-0 text-zinc-200"
+              className="text-sm font-semibold flex items-center gap-2 min-w-0 text-foreground"
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
@@ -78,7 +95,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                 onClick={onToggle}
                 size="icon"
                 variant="ghost"
-                className="w-8 h-8 rounded-md hover:bg-zinc-800 transition-colors flex-shrink-0"
+                className="w-8 h-8 rounded-md hover:bg-muted transition-colors flex-shrink-0"
               >
                 <motion.div
                   initial={false}
@@ -109,7 +126,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="mx-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold text-xs shadow-sm cursor-pointer hover:scale-105 transition-transform">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold text-xs shadow-sm cursor-pointer hover:scale-105 transition-transform">
                       {user.name ? (
                         getInitials(user.name)
                       ) : (
@@ -124,9 +141,13 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold text-xs shadow-sm flex-shrink-0">
-                {user.name ? getInitials(user.name) : <User className="h-3 w-3" />}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted transition-colors cursor-pointer">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold text-xs shadow-sm flex-shrink-0">
+                {user.name ? (
+                  getInitials(user.name)
+                ) : (
+                  <User className="h-3 w-3" />
+                )}
               </div>
               <AnimatePresence>
                 <motion.span
@@ -134,7 +155,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.15, delay: 0.05 }}
-                  className="truncate text-zinc-200"
+                  className="truncate text-foreground"
                 >
                   {user.name || user.email || "User"}
                 </motion.span>
@@ -148,7 +169,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
             <Link
               key={index}
               href={item.href}
-              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-zinc-800 transition-colors text-zinc-300"
+              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-muted-foreground"
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
@@ -157,7 +178,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
             <div
               key={index}
               onClick={item.onClick}
-              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer text-zinc-300"
+              className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-muted-foreground"
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
@@ -169,7 +190,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
         {!isCollapsed ? (
           <div
             onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-red-900/30 transition-colors text-red-500 font-semibold cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors text-destructive font-semibold cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             <span>Logout</span>
@@ -183,9 +204,9 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                     onClick={logout}
                     size="icon"
                     variant="ghost"
-                    className="w-8 h-8 rounded-md hover:bg-red-900/30 transition-colors flex items-center justify-center"
+                    className="w-8 h-8 rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors flex items-center justify-center"
                   >
-                    <LogOut className="h-4 w-4 text-red-500" />
+                    <LogOut className="h-4 w-4 text-destructive" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Logout</TooltipContent>
@@ -202,7 +223,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
                 .querySelector<HTMLButtonElement>("#theme-toggle-button")
                 ?.click()
             }
-            className="flex w-full items-center gap-2 px-4 py-2 rounded-md hover:bg-zinc-800 cursor-pointer transition-colors text-zinc-300"
+            className="flex w-full items-center gap-2 px-4 py-2 rounded-md hover:bg-muted cursor-pointer transition-colors text-muted-foreground"
           >
             <ThemeToggle
               className="h-4 w-4 flex-shrink-0"
@@ -223,7 +244,7 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <ThemeToggle className="w-8 h-8 rounded-md hover:bg-zinc-800 transition-colors flex items-center justify-center" />
+                  <ThemeToggle className="w-8 h-8 rounded-md hover:bg-muted transition-colors flex items-center justify-center" />
                 </TooltipTrigger>
                 <TooltipContent side="right">Theme</TooltipContent>
               </Tooltip>
@@ -234,6 +255,15 @@ export function SessionSidebar({ isCollapsed, onToggle }: SessionSidebarProps) {
 
       {/* Sessions List */}
       <SessionList isCollapsed={isCollapsed} userId={userId} />
+
+      {/* Search Popup */}
+      {userId && (
+        <SearchDialog
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          userId={userId}
+        />
+      )}
     </div>
   );
 }

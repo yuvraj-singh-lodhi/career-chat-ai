@@ -41,8 +41,8 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         className={cn(
           "max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-sm transition-colors border-0",
           isUser
-            ? "bg-zinc-800/70 text-zinc-100" // softer dark gray
-            : "bg-zinc-700/60 text-zinc-100" // slightly lighter gray
+            ? "bg-zinc-800/70 text-zinc-50" // softer dark gray
+            : "bg-zinc-700/90 text-zinc-50" // slightly lighter gray
         )}
       >
         {content === "•••" ? (

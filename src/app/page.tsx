@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full px-4 bg-gradient-to-b from-background via-muted/40 to-background text-center">
