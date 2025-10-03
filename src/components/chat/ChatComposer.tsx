@@ -67,7 +67,7 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
       onSubmit={handleSubmit}
       className="flex justify-center items-center bg-background px-2 sm:px-3 py-3 sm:py-4"
     >
-      <div className="relative w-full max-w-3xl flex items-center gap-2">
+      <div className="flex w-full max-w-3xl items-center gap-2">
         {/* Text input + send */}
         <div className="relative flex-1">
           <Input

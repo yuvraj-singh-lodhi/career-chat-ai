@@ -8,6 +8,7 @@ import { Sparkles, ArrowRight, Rocket } from "lucide-react";
 import React from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
+import { TypewriterEffectSmooth  } from "@/components/ui/typewriter-effect";
 
 export default function HomePage() {
   const { status } = useSession();
@@ -32,10 +33,16 @@ export default function HomePage() {
         {/* Icon animation */}
         <Sparkles className="w-14 h-14 text-blue-500 animate-pulse drop-shadow-lg" />
 
-        {/* Heading */}
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Your Career&#39;s AI Co-pilot
-        </h1>
+        {/* Heading with TypewriterEffect */}
+        <TypewriterEffectSmooth 
+          words={[
+            { text: "Your", className: "text-blue-500" },
+            { text: "Career's", className: "text-purple-500" },
+            { text: "AI", className: "text-pink-500" },
+            { text: "Co-pilot", className: "text-blue-500" },
+          ]}
+          className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl"
+        />
 
         {/* Subtext */}
         <p className="text-lg text-muted-foreground max-w-xl md:text-xl">

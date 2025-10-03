@@ -54,7 +54,6 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
     if (initialMessageContent && messages.length === 0) {
       handleSend({ content: initialMessageContent });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessageContent, messages.length]);
 
   const handleSend = async (message: { content?: string }) => {
@@ -144,9 +143,7 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
 
   return (
     <ChatLayout>
-      <div className="flex flex-1 flex-col min-h-0">
-        {" "}
-        {/* 👈 min-h-0 is key */}
+      <div className="flex flex-1 flex-col min-h-0 w-full max-w-3xl mx-auto px-4 sm:px-6">
         <AnimatePresence mode="wait">
           {!hasConversationStarted ? (
             <motion.div
@@ -155,19 +152,16 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.4 }}
-              className="flex flex-1 flex-col items-center justify-center space-y-6 px-4 text-center sm:px-6"
+              className="flex flex-1 flex-col items-center justify-center space-y-6 text-center min-h-[60vh]"
             >
               <h1 className="text-lg sm:text-xl font-semibold">
-                Hello {authSession?.user?.name?.split(" ")[0] || "there"}!{" "}
-                <br />
+                Hello {authSession?.user?.name?.split(" ")[0] || "there"}! <br />
                 I&apos;m your AI career counselor. How can I help today?
               </h1>
-              <div className="w-full max-w-lg">
-                <ChatComposer
-                  onSend={handleSend}
-                  disabled={sendMessageMutation.isPending}
-                />
-              </div>
+              <ChatComposer
+                onSend={handleSend}
+                disabled={sendMessageMutation.isPending}
+              />
             </motion.div>
           ) : (
             <motion.div
@@ -176,15 +170,15 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.4 }}
-              className="flex flex-1 flex-col min-h-0" // 👈 ensures scroll works
+              className="flex flex-1 flex-col min-h-0"
             >
               {/* Scrollable messages */}
-              <div className="flex-1 w-full overflow-y-auto px-2 sm:px-4">
+              <div className="flex-1 w-full overflow-y-auto">
                 <MessageList messages={messages} />
               </div>
 
               {/* Composer always visible */}
-              <div className="px-2 sm:px-4 pb-2 sm:pb-4 shrink-0">
+              <div className="mt-2 shrink-0">
                 <ChatComposer
                   onSend={handleSend}
                   disabled={sendMessageMutation.isPending}
