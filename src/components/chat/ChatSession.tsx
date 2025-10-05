@@ -48,7 +48,7 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
         }))
       );
     }
-  }, [status, existingMessages, router]);
+  }, [status, existingMessages]);
 
   React.useEffect(() => {
     if (initialMessageContent && messages.length === 0) {
@@ -140,6 +140,7 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
   if (status === "unauthenticated") return null;
 
   const hasConversationStarted = messages.length > 0;
+  const headingText = `Hello ${authSession?.user?.name?.split(" ")[0] || "there"}! I'm your AI career counselor.`;
 
   return (
     <ChatLayout>
@@ -154,10 +155,36 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
               transition={{ duration: 0.4 }}
               className="flex flex-1 flex-col items-center justify-center space-y-6 text-center min-h-[60vh]"
             >
-              <h1 className="text-lg sm:text-xl font-semibold">
-                Hello {authSession?.user?.name?.split(" ")[0] || "there"}! <br />
-                I&apos;m your AI career counselor. How can I help today?
-              </h1>
+              {/* Animated Heading */}
+              <motion.h1
+                key={headingText} // replay animation when text changes
+                className="text-5xl sm:text-6xl md:text-5xl font-bold tracking-tighter mb-4 max-w-4xl mx-auto leading-tight"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+              >
+                {headingText.split(" ").map((word, wordIndex) => (
+                  <span key={wordIndex} className="inline-block mr-2 last:mr-0">
+                    {word.split("").map((letter, letterIndex) => (
+                      <motion.span
+                        key={`${wordIndex}-${letterIndex}`}
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{
+                          delay: wordIndex * 0.1 + letterIndex * 0.02,
+                          type: "spring",
+                          stiffness: 120,
+                          damping: 20,
+                        }}
+                        className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 to-neutral-700/80 dark:from-white dark:to-white/80"
+                      >
+                        {letter}
+                      </motion.span>
+                    ))}
+                  </span>
+                ))}
+              </motion.h1>
+
               <ChatComposer
                 onSend={handleSend}
                 disabled={sendMessageMutation.isPending}
@@ -172,12 +199,10 @@ export function ChatSession({ sessionId }: { sessionId: string | null }) {
               transition={{ duration: 0.4 }}
               className="flex flex-1 flex-col min-h-0"
             >
-              {/* Scrollable messages */}
               <div className="flex-1 w-full overflow-y-auto">
                 <MessageList messages={messages} />
               </div>
 
-              {/* Composer always visible */}
               <div className="mt-2 shrink-0">
                 <ChatComposer
                   onSend={handleSend}

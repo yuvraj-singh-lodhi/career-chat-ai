@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { SearchDialog } from "./SearchDialog";
 
 interface SidebarItem {
   icon: ForwardRefExoticComponent<
@@ -33,20 +34,41 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { userId, user, logout } = useAuth();
   const createSessionMutation = trpc.session.create.useMutation();
-  const { data: sessions, isLoading, error, refetch } = trpc.session.listByUser.useQuery(
+  const {
+    data: sessions,
+    isLoading,
+    error,
+    refetch,
+  } = trpc.session.listByUser.useQuery(
     { userId: userId || "" },
     { enabled: !!userId }
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
+    null
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    null
+  );
   const deleteSessionMutation = trpc.session.delete.useMutation();
+  // Effect hook for Ctrl+K
+  React.useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
 
+  // Early return if userId is missing
   if (!userId) return null;
-
+  
   const getInitials = (name: string = "") => {
     if (!name.trim()) return "?";
     const names = name.trim().split(/\s+/);
@@ -56,7 +78,10 @@ export function AppSidebar() {
 
   const handleNewChat = async () => {
     try {
-      const newSession = await createSessionMutation.mutateAsync({ title: "New Chat", userId });
+      const newSession = await createSessionMutation.mutateAsync({
+        title: "New Chat",
+        userId,
+      });
       router.push(`/chat/${newSession.id}`);
       refetch();
     } catch (err) {
@@ -82,11 +107,15 @@ export function AppSidebar() {
       setConfirmOpen(false);
     }
   };
+  // Inside AppSidebar component
 
-  const sidebarItems: SidebarItem[] = [
-    { icon: Plus, label: "New Chat", onClick: handleNewChat },
-    { icon: Search, label: "Search Chats", onClick: () => setIsSearchOpen(true) },
-  ];
+  const handleToggleSearch = () => setIsSearchOpen((prev) => !prev);
+
+const sidebarItems: SidebarItem[] = [
+  { icon: Plus, label: "New Chat", onClick: handleNewChat },
+  { icon: Search, label: "Search Chats", onClick: handleToggleSearch },
+];
+
 
   return (
     <>
@@ -99,7 +128,11 @@ export function AppSidebar() {
               {user && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted transition-colors cursor-pointer">
                   <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-xs shadow-sm flex-shrink-0">
-                    {user.name ? getInitials(user.name) : <User className="h-3 w-3" />}
+                    {user.name ? (
+                      getInitials(user.name)
+                    ) : (
+                      <User className="h-3 w-3" />
+                    )}
                   </div>
                   {!isCollapsed && (
                     <AnimatePresence>
@@ -155,11 +188,19 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <div
                       onClick={() =>
-                        document.querySelector<HTMLButtonElement>("#theme-toggle-button")?.click()
+                        document
+                          .querySelector<HTMLButtonElement>(
+                            "#theme-toggle-button"
+                          )
+                          ?.click()
                       }
                       className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted cursor-pointer transition-colors text-muted-foreground"
                     >
-                      <ThemeToggle className="h-4 w-4 flex-shrink-0" id="theme-toggle-button" style={{ pointerEvents: "none" }} />
+                      <ThemeToggle
+                        className="h-4 w-4 flex-shrink-0"
+                        id="theme-toggle-button"
+                        style={{ pointerEvents: "none" }}
+                      />
                       {!isCollapsed && <span>Theme</span>}
                     </div>
                   </SidebarMenuButton>
@@ -174,8 +215,16 @@ export function AppSidebar() {
                   Chats
                 </div>
                 <AnimatePresence>
-                  {isLoading && <div className="px-4 py-2 text-sm text-muted-foreground">Loading...</div>}
-                  {error && <div className="px-4 py-2 text-sm text-destructive">Failed to load sessions</div>}
+                  {isLoading && (
+                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                      Loading...
+                    </div>
+                  )}
+                  {error && (
+                    <div className="px-4 py-2 text-sm text-destructive">
+                      Failed to load sessions
+                    </div>
+                  )}
                   {sessions?.map((session) => {
                     const isActive = pathname === `/chat/${session.id}`;
                     const isLoadingSession = loadingSessionId === session.id;
@@ -192,7 +241,12 @@ export function AppSidebar() {
                             )}
                             onClick={() => handleSessionClick(session.id)}
                           >
-                            <span className={cn("flex-1 truncate text-sm", isActive && "font-semibold")}>
+                            <span
+                              className={cn(
+                                "flex-1 truncate text-sm",
+                                isActive && "font-semibold"
+                              )}
+                            >
                               {isLoadingSession ? "Loading..." : session.title}
                             </span>
                             {!isActive && (
@@ -222,12 +276,20 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
       </Sidebar>
-
+      <SearchDialog
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        userId={userId}
+      />
       {/* Confirm Dialog for Deletion */}
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={() => selectedSessionId ? handleDeleteSession(selectedSessionId) : Promise.resolve()}
+        onConfirm={() =>
+          selectedSessionId
+            ? handleDeleteSession(selectedSessionId)
+            : Promise.resolve()
+        }
         title="Delete this chat?"
         description="This will permanently delete the chat and all its messages. This action cannot be undone."
         confirmText="Delete"
